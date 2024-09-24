@@ -1,0 +1,173 @@
+@page "/questions"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using SurveyAuth.Data
+@using SurveyAuth.Models
+
+@inject ApplicationDbContext DbContext
+
+<PageTitle>Questions - Blazor</PageTitle>
+
+<h1 class="title-spacing">Add/Edit Questions</h1>
+
+<div>
+    <p>(Select below to edit or add new question)</p>
+    <select @onchange="OnQuestionSelected">
+
+        @foreach(var question in AllQuestions)
+        {
+            <option value="@question.Id">(@question.Id) @question.Text</option>    
+        }
+    </select>
+</div>
+
+@if (selectedQuestionId <= 0)    // option new question has been selected by user or default
+{
+    <h4 class="edit-question">Add new question</h4>
+    <table class=" table table-question">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>SurveyId</th>
+                <th>Text</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <input type="number" @bind="QId" />
+                </td>
+                <td>
+                    <input type="number" @bind="SId" />
+                </td>
+                <td>
+                    <input type="text" @bind="QText" />
+                </td>
+                <td>
+                    <input type="text" @bind="QDescription" />
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <button class="btn btn-primary" @onclick="AddQuestion" disabled="@(QId == 0 )">Add</button>
+}
+else if (selectedQuestionId > 0)    // a question has been selected
+{
+    <h4 class="edit-question">Modify existing question</h4>
+    <table class="table table-question">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>SurveyId</th>
+                <th>Text</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>            
+            <tr>
+                <td>
+                    <input type="number" @bind="selectedQuestion.Id" />
+                </td>
+                <td>
+                   <input type="number" @bind="selectedQuestion.SurveyId" />
+                </td>
+                <td>
+                   <input type="text" @bind="selectedQuestion.Text" />
+                </td>
+                <td>
+                    <input type="text" @bind="selectedQuestion.Description" />
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <button class="btn btn-primary" @onclick="SaveQuestion">Update</button>
+    <button class="btn btn-primary" @onclick="DeleteQuestion">Delete</button>
+}
+
+@code
+{
+    private int selectedQuestionId = 0;
+    private Question? selectedQuestion;
+    public List<Question> QuestionsToDisplay = new List<Question>();
+    public List<Question> AllQuestions = new List<Question>();
+    
+    private int currPage = 0;
+    private const int perPage = 3; // set number of items displayed per page
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load all questions once
+        AllQuestions = await DbContext.Questions.ToListAsync();
+
+        AllQuestions.Insert(0, new Question { Id = -1, Text = "New Question" }); // Add "New Question" option
+    }
+
+    private async Task OnQuestionSelected(ChangeEventArgs e)
+    {
+        selectedQuestionId = int.Parse(e.Value.ToString());
+        selectedQuestion = await DbContext.Questions.FirstOrDefaultAsync(q => q.Id == selectedQuestionId);
+    }
+    private void Next()
+    {
+        if (currPage < (AllQuestions.Count - 1) / perPage)
+        {
+            currPage++;
+            QuestionsToDisplay = AllQuestions.Skip(currPage * perPage).Take(perPage).ToList();
+        }
+    }
+
+    private void Previous()    
+    {
+        if (currPage > 0)
+        {
+            currPage--;
+            QuestionsToDisplay = AllQuestions.Skip(currPage * perPage).Take(perPage).ToList();
+        }
+    }
+
+    private async Task SaveQuestion ()
+    {
+        await DbContext.SaveChangesAsync();
+    }
+
+    private async Task DeleteQuestion()
+    {
+        DbContext.Remove(selectedQuestion);
+        await DbContext.SaveChangesAsync();
+    }
+
+    private int QId {get; set;}
+    private int SId {get;set;}
+    private string QText {get; set;}
+    private string QDescription {get; set;}
+
+    private async Task AddQuestion()
+    {
+        var exist = await DbContext.Questions.FirstOrDefaultAsync(q => q.Id == QId);
+        if (exist != null)
+        {
+            selectedQuestionId = QId;
+            selectedQuestion = exist; 
+            return;
+        }
+
+        var newQ = new Question 
+        {
+            Id = QId,
+            SurveyId = SId,
+            Text = QText,
+            Description = QDescription
+        };
+        DbContext.Questions.Add(newQ);
+        await DbContext.SaveChangesAsync();
+        await OnInitializedAsync();
+        QId = 0;
+        SId = 0;
+        QText = String.Empty;
+        QDescription = String.Empty;
+    }
+
+}    

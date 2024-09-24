@@ -1,0 +1,41 @@
+{
+  "Files": [
+    {
+      "Id": "D:\\Dev\\24092024\\surveyauth\\obj\\Debug\\net8.0\\scopedcss\\projectbundle\\SurveyAuth.bundle.scp.css",
+      "PackagePath": "staticwebassets\\SurveyAuth.bundle.scp.css"
+    },
+    {
+      "Id": "D:\\Dev\\24092024\\surveyauth\\wwwroot\\app.css",
+      "PackagePath": "staticwebassets\\app.css"
+    },
+    {
+      "Id": "D:\\Dev\\24092024\\surveyauth\\wwwroot\\bootstrap\\bootstrap.min.css",
+      "PackagePath": "staticwebassets\\bootstrap\\bootstrap.min.css"
+    },
+    {
+      "Id": "D:\\Dev\\24092024\\surveyauth\\wwwroot\\bootstrap\\bootstrap.min.css.map",
+      "PackagePath": "staticwebassets\\bootstrap\\bootstrap.min.css.map"
+    },
+    {
+      "Id": "D:\\Dev\\24092024\\surveyauth\\wwwroot\\favicon.png",
+      "PackagePath": "staticwebassets\\favicon.png"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.SurveyAuth.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.SurveyAuth.props",
+      "PackagePath": "build\\SurveyAuth.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.SurveyAuth.props",
+      "PackagePath": "buildMultiTargeting\\SurveyAuth.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.SurveyAuth.props",
+      "PackagePath": "buildTransitive\\SurveyAuth.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

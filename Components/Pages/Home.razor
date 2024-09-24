@@ -1,0 +1,61 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using SurveyAuth.Data
+@using SurveyAuth.Models
+@inject ApplicationDbContext DbContext
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using Microsoft.AspNetCore.Authorization
+@using System.Security.Claims
+@attribute [Authorize]
+
+
+<PageTitle>Survey Home</PageTitle>
+
+<h1 class="title-spacing">Hello, @Respondent.Name!</h1>
+
+<p>Select a survey, then click below to go to answers.</p>
+
+<div>
+    <select class="title-spacing" @onchange="OnSurveySelected">
+        <option value="0">Select a survey</option>
+        @foreach (var survey in AllSurveys)
+        {
+            <option value="@survey.Id">@survey.Id @survey.Name</option>
+        }
+    </select>
+</div>
+<button class="btn btn-primary" disabled=@(SelectedSurveyId == 0)>
+    <a class="link-white" href="/answers/@SelectedSurveyId" >Go to answers!</a>
+</button>
+
+@code
+{
+    private int SelectedSurveyId {get; set;}
+    private Survey selectedSurvey;
+    private List<Survey> AllSurveys {get; set;} = new List<Survey>();
+
+    private string RespondentId {get; set;} // get it from authentication
+    public ApplicationUser Respondent {get; set;} = new ApplicationUser();
+    protected override async Task OnInitializedAsync()
+    {
+        AllSurveys = await DbContext.Surveys.ToListAsync();
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync().ConfigureAwait(false);        
+        RespondentId = authenticationState.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        Respondent = await DbContext.Users.FirstOrDefaultAsync(u => u.Id == RespondentId);
+    }       
+
+    private async Task OnSurveySelected(ChangeEventArgs e)
+    {
+        SelectedSurveyId = int.Parse(e.Value.ToString());
+        if (SelectedSurveyId > 0)
+        {
+            selectedSurvey = await DbContext.Surveys.FirstOrDefaultAsync(q => q.Id == SelectedSurveyId);
+        }
+    }
+}    
+
