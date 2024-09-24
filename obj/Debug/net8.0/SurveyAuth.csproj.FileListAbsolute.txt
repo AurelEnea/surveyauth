@@ -249,6 +249,7 @@ D:\Dev\24092024\surveyauth\obj\Debug\net8.0\SurveyAuth.AssemblyInfoInputs.cache
 D:\Dev\24092024\surveyauth\obj\Debug\net8.0\SurveyAuth.AssemblyInfo.cs
 D:\Dev\24092024\surveyauth\obj\Debug\net8.0\SurveyAuth.csproj.CoreCompileInputs.cache
 D:\Dev\24092024\surveyauth\obj\Debug\net8.0\SurveyAuth.MvcApplicationPartsAssemblyInfo.cache
+D:\Dev\24092024\surveyauth\obj\Debug\net8.0\SurveyAuth.sourcelink.json
 D:\Dev\24092024\surveyauth\obj\Debug\net8.0\staticwebassets.build.json
 D:\Dev\24092024\surveyauth\obj\Debug\net8.0\staticwebassets.development.json
 D:\Dev\24092024\surveyauth\obj\Debug\net8.0\staticwebassets\msbuild.SurveyAuth.Microsoft.AspNetCore.StaticWebAssets.props
