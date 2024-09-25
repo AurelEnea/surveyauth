@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SurveyAuth")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c563de91344d0fcfa4c3f586c7e707e536a7b63f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4738846f6e18210edd3c9127e3138057a19397af")]
 [assembly: System.Reflection.AssemblyProductAttribute("SurveyAuth")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SurveyAuth")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

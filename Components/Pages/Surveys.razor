@@ -20,24 +20,14 @@
     </select>
 </div>
 
-<EditForm Model="@Survey">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
 
-    <div class="form-group">
-        <label for="name">Name:</label>
-        <input type="text" class="form-control" @bind="Survey.Name"  />
-        <ValidationMessage For="@(() => Survey.Name)" />
-    </div>
-
-    <button type="submit">Submit</button>
-</EditForm> 
-
-
-@if (selectedSurveyId <= 0)    // option new Survey has been selected by user or default
+@if (selectedSurveyId <= 0)    // Option new Survey has been selected by user or default
 {
     <h4 class="edit-survey">Add new survey</h4>
-    
+    <EditForm EditContext="EditContext" OnValidSubmit="@AddSurvey">
+    <DataAnnotationsValidator />
+    <ValidationSummary />            
+
     <table class="table table-survey">
         <thead>
             <tr>
@@ -55,7 +45,7 @@
                 </td>
                 <td>
                     <input type="text" @bind="Survey.Name" />
-                    <!--<ValidationMessage For="@(() => Survey.Name)" /> -->
+                    <ValidationMessage For="@(() => Survey.Name)" />
                 </td>
                 <td>
                     <input type="text" @bind="Survey.Description" />
@@ -70,10 +60,15 @@
         </tbody>
     </table>
 
-    <button class="btn btn-primary" @onclick="AddSurvey" disabled="@(Survey.Id == 0 )">Add</button>
-    
+    <button type="submit" class="btn btn-primary" @onclick="AddSurvey" disabled="@(Survey.Id == 0)">Add</button>   
+    <ValidationMessage For="@(() => CustomErrorMessage)" />
+    @if (CustomErrorMessage != null)
+    {
+        <div class="text-danger">@CustomErrorMessage</div>
+    }
+    </EditForm>     
 }
-else if (selectedSurveyId > 0)    // Existing Survey has been selected
+else if (selectedSurveyId > 0)    // An existing Survey has been selected
 {
     <h4 class="edit-survey">Modify existing survey</h4>
     <table class="table table-survey">
@@ -113,13 +108,14 @@ else if (selectedSurveyId > 0)    // Existing Survey has been selected
 
 @code
 {
+    private EditContext EditContext {get; set;} = new EditContext(new Survey());
+    private string CustomErrorMessage {get; set;}
     private int selectedSurveyId = 0;
     private Survey? selectedSurvey;
     public List<Survey> AllSurveys = new List<Survey>();
     //private EditContext editContext;  // either Model or EditContext, not both
     protected override async Task OnInitializedAsync()
-    {
-        //editContext = new EditContext(Survey);
+    {        
         // Load all Surveys once
         AllSurveys = await DbContext.Surveys.ToListAsync();
 
@@ -128,8 +124,15 @@ else if (selectedSurveyId > 0)    // Existing Survey has been selected
 
     private async Task OnSurveySelected(ChangeEventArgs e)
     {
+        ClearErrorMessages();
         selectedSurveyId = int.Parse(e.Value.ToString());
         selectedSurvey = await DbContext.Surveys.FirstOrDefaultAsync(q => q.Id == selectedSurveyId);
+    }
+
+    private void ClearErrorMessages()
+    {
+        CustomErrorMessage = string.Empty;
+        EditContext = new EditContext(Survey);  // Reset validation
     }
     
     private async Task SaveSurvey ()
@@ -146,16 +149,19 @@ else if (selectedSurveyId > 0)    // Existing Survey has been selected
     private Survey Survey = new Survey();
     private async Task AddSurvey()
     {
-        //if (editContext.Validate())
+        try
         {
+            ClearErrorMessages();
+            // Check for existing survey
             var exist = await DbContext.Surveys.FirstOrDefaultAsync(q => q.Id == Survey.Id);
             if (exist != null)
             {
                 selectedSurveyId = Survey.Id;
-                selectedSurvey = exist; //await DbContext.Surveys.FirstOrDefaultAsync(q => q.Id == selectedSurveyId);
+                selectedSurvey = exist;
                 return;
             }
 
+            // Create new survey
             var newS = new Survey 
             {
                 Id = Survey.Id,
@@ -164,10 +170,36 @@ else if (selectedSurveyId > 0)    // Existing Survey has been selected
                 StartDate = Survey.StartDate,
                 EndDate = Survey.EndDate
             };
-            DbContext.Surveys.Add(newS);
-            await DbContext.SaveChangesAsync();
+
+            // Begin transaction
+            using (var dbContextTransaction = await DbContext.Database.BeginTransactionAsync())
+            {
+                DbContext.Surveys.Add(newS);
+                await DbContext.SaveChangesAsync();
+                await dbContextTransaction.CommitAsync();
+            }
+
+            // Reload data
             await OnInitializedAsync();
             Survey = new Survey();
+        }
+        catch (DbUpdateException ex)
+        {
+            CustomErrorMessage = $"Database update failed. Please try again. {ex.InnerException.Message}";
+            EditContext.NotifyValidationStateChanged();
+        }
+        catch (ValidationException ex)
+        {
+            // Handle validation errors
+            CustomErrorMessage = ex.Message + ex.InnerException?.Message;
+            EditContext.NotifyValidationStateChanged();
+        }
+        catch (Exception ex)
+        {
+            // Handle general errors
+            CustomErrorMessage = "An unexpected error occurred while trying to add the survey to the database. Please try again." +
+                ex.InnerException?.Message;
+            EditContext.NotifyValidationStateChanged();
         }
     }
 }    
