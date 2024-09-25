@@ -101,8 +101,8 @@ else if (selectedQuestionId > 0)    // a question has been selected
     {
         // Load all questions once
         AllQuestions = await DbContext.Questions.ToListAsync();
-
-        AllQuestions.Insert(0, new Question { Id = -1, Text = "New Question" }); // Add "New Question" option
+        AllQuestions.Insert(0, new Question { Id = -1, Text = "New Question" }); // Add "New Question" option        
+    
     }
 
     private async Task OnQuestionSelected(ChangeEventArgs e)

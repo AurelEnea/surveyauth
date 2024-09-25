@@ -13,8 +13,8 @@
 
 <PageTitle>Survey Blazor</PageTitle>
 
-<h1 class="title-spacing">Hello @Respondent.Name!</h1>
-<h4> Answers for survey: @Survey.Name</h4>
+<h1 class="title-spacing">Hello, @Respondent.Name!</h1>
+<h4> Answers for survey: "@Survey.Name"</h4>
 
 <EditForm Model="@Answer" OnSubmit="HandleSubmit">    
 
@@ -32,7 +32,7 @@
         {
             <tr>
                 <td>
-                    <p>(@answer.Id) "@answer.Question.Text" </p>
+                    <p>(@answer.QuestionId) "@answer.Question.Text" </p>
                 </td>
                 <td>
                     <p>@answer.Question.Description</p>

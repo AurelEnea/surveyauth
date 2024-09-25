@@ -4,6 +4,7 @@
 @using SurveyAuth.Data
 @using SurveyAuth.Models
 @inject ApplicationDbContext DbContext
+@using System.ComponentModel.DataAnnotations
 
 <PageTitle>Surveys - Blazor</PageTitle>
 
@@ -19,9 +20,24 @@
     </select>
 </div>
 
+<EditForm Model="@Survey">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label for="name">Name:</label>
+        <input type="text" class="form-control" @bind="Survey.Name"  />
+        <ValidationMessage For="@(() => Survey.Name)" />
+    </div>
+
+    <button type="submit">Submit</button>
+</EditForm> 
+
+
 @if (selectedSurveyId <= 0)    // option new Survey has been selected by user or default
 {
     <h4 class="edit-survey">Add new survey</h4>
+    
     <table class="table table-survey">
         <thead>
             <tr>
@@ -35,27 +51,29 @@
         <tbody>
             <tr>
                 <td>
-                    <input type="number" @bind="SId" />
+                    <input type="number" @bind="Survey.Id" />
                 </td>
                 <td>
-                    <input type="text" @bind="SName" />
+                    <input type="text" @bind="Survey.Name" />
+                    <!--<ValidationMessage For="@(() => Survey.Name)" /> -->
                 </td>
                 <td>
-                    <input type="text" @bind="SDescription" />
+                    <input type="text" @bind="Survey.Description" />
                 </td>
                 <td>
-                    <input type="date" @bind="SStart" />
+                    <input type="date" @bind="Survey.StartDate" />
                 </td>
                 <td>
-                    <input type="date" @bind="SEnd" />
+                    <input type="date" @bind="Survey.EndDate" />
                 </td>
             </tr>
         </tbody>
     </table>
 
-    <button class="btn btn-primary" @onclick="AddSurvey" disabled="@(SId == 0 )">Add</button>
+    <button class="btn btn-primary" @onclick="AddSurvey" disabled="@(Survey.Id == 0 )">Add</button>
+    
 }
-else if (selectedSurveyId > 0)    // a Survey has been selected
+else if (selectedSurveyId > 0)    // Existing Survey has been selected
 {
     <h4 class="edit-survey">Modify existing survey</h4>
     <table class="table table-survey">
@@ -75,6 +93,7 @@ else if (selectedSurveyId > 0)    // a Survey has been selected
                 <td>
                    <input type="text" @bind="selectedSurvey.Name" />
                 </td>
+    using SQLitePCL;
                 <td>
                    <input type="text" @bind="selectedSurvey.Description" />
                 </td>
@@ -97,9 +116,10 @@ else if (selectedSurveyId > 0)    // a Survey has been selected
     private int selectedSurveyId = 0;
     private Survey? selectedSurvey;
     public List<Survey> AllSurveys = new List<Survey>();
-
+    //private EditContext editContext;  // either Model or EditContext, not both
     protected override async Task OnInitializedAsync()
     {
+        //editContext = new EditContext(Survey);
         // Load all Surveys once
         AllSurveys = await DbContext.Surveys.ToListAsync();
 
@@ -123,39 +143,31 @@ else if (selectedSurveyId > 0)    // a Survey has been selected
         await DbContext.SaveChangesAsync();
     }
 
-    private int SId {get; set;}    
-    private string SName {get; set;}
-    private string SDescription {get; set;}
-
-    private DateOnly SStart {get; set;}
-
-    private DateOnly SEnd {get; set;}
-
+    private Survey Survey = new Survey();
     private async Task AddSurvey()
     {
-        var exist = await DbContext.Surveys.FirstOrDefaultAsync(q => q.Id == SId);
-        if (exist != null)
+        //if (editContext.Validate())
         {
-            selectedSurveyId = SId;
-            selectedSurvey = exist; //await DbContext.Surveys.FirstOrDefaultAsync(q => q.Id == selectedSurveyId);
-            return;
-        }
+            var exist = await DbContext.Surveys.FirstOrDefaultAsync(q => q.Id == Survey.Id);
+            if (exist != null)
+            {
+                selectedSurveyId = Survey.Id;
+                selectedSurvey = exist; //await DbContext.Surveys.FirstOrDefaultAsync(q => q.Id == selectedSurveyId);
+                return;
+            }
 
-        var newS = new Survey 
-        {
-            Id = SId,
-            Name = SName,
-            Description = SDescription,
-            StartDate = SStart,
-            EndDate = SEnd
-        };
-        DbContext.Surveys.Add(newS);
-        await DbContext.SaveChangesAsync();
-        await OnInitializedAsync();
-        SId = 0;
-        SName = String.Empty;        
-        SDescription = String.Empty;
-        SStart = DateOnly.MinValue;
-        SEnd = DateOnly.MinValue;
+            var newS = new Survey 
+            {
+                Id = Survey.Id,
+                Name = Survey.Name,
+                Description = Survey.Description,
+                StartDate = Survey.StartDate,
+                EndDate = Survey.EndDate
+            };
+            DbContext.Surveys.Add(newS);
+            await DbContext.SaveChangesAsync();
+            await OnInitializedAsync();
+            Survey = new Survey();
+        }
     }
 }    
