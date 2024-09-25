@@ -20,7 +20,6 @@
     </select>
 </div>
 
-
 @if (selectedSurveyId <= 0)    // Option new Survey has been selected by user or default
 {
     <h4 class="edit-survey">Add new survey</h4>
@@ -88,7 +87,6 @@ else if (selectedSurveyId > 0)    // An existing Survey has been selected
                 <td>
                    <input type="text" @bind="selectedSurvey.Name" />
                 </td>
-    using SQLitePCL;
                 <td>
                    <input type="text" @bind="selectedSurvey.Description" />
                 </td>
@@ -112,13 +110,11 @@ else if (selectedSurveyId > 0)    // An existing Survey has been selected
     private string CustomErrorMessage {get; set;}
     private int selectedSurveyId = 0;
     private Survey? selectedSurvey;
-    public List<Survey> AllSurveys = new List<Survey>();
-    //private EditContext editContext;  // either Model or EditContext, not both
+    public List<Survey> AllSurveys = new List<Survey>();    
     protected override async Task OnInitializedAsync()
     {        
         // Load all Surveys once
         AllSurveys = await DbContext.Surveys.ToListAsync();
-
         AllSurveys.Insert(0, new Survey { Id = -1, Name = "New Survey" }); // Add "New Survey" option
     }
 
@@ -198,7 +194,7 @@ else if (selectedSurveyId > 0)    // An existing Survey has been selected
         {
             // Handle general errors
             CustomErrorMessage = "An unexpected error occurred while trying to add the survey to the database. Please try again." +
-                ex.InnerException?.Message;
+                ex.Message + ex.InnerException?.Message;
             EditContext.NotifyValidationStateChanged();
         }
     }

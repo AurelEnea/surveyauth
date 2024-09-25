@@ -3,8 +3,8 @@
 @using Microsoft.EntityFrameworkCore
 @using SurveyAuth.Data
 @using SurveyAuth.Models
-
 @inject ApplicationDbContext DbContext
+@using System.ComponentModel.DataAnnotations
 
 <PageTitle>Questions - Blazor</PageTitle>
 
@@ -13,7 +13,6 @@
 <div>
     <p>(Select below to edit or add new question)</p>
     <select @onchange="OnQuestionSelected">
-
         @foreach(var question in AllQuestions)
         {
             <option value="@question.Id">(@question.Id) @question.Text</option>    
@@ -21,10 +20,14 @@
     </select>
 </div>
 
-@if (selectedQuestionId <= 0)    // option new question has been selected by user or default
+@if (selectedQuestionId <= 0)    // Option new question has been selected by user or default
 {
     <h4 class="edit-question">Add new question</h4>
-    <table class=" table table-question">
+    <EditForm EditContext="EditContext" OnValidSubmit="@AddQuestion">
+    <DataAnnotationsValidator />
+    <ValidationSummary />   
+
+    <table class="table table-question">
         <thead>
             <tr>
                 <th>Id</th>
@@ -36,22 +39,29 @@
         <tbody>
             <tr>
                 <td>
-                    <input type="number" @bind="QId" />
+                    <input type="number" @bind="Question.Id" />
                 </td>
                 <td>
-                    <input type="number" @bind="SId" />
+                    <input type="number" @bind="Question.SurveyId" />
                 </td>
                 <td>
-                    <input type="text" @bind="QText" />
+                    <input type="text" @bind="Question.Text" />
+                    <ValidationMessage For="@(() => Question.Text)" />
                 </td>
                 <td>
-                    <input type="text" @bind="QDescription" />
+                    <input type="text" @bind="Question.Description" />
                 </td>
             </tr>
         </tbody>
     </table>
 
-    <button class="btn btn-primary" @onclick="AddQuestion" disabled="@(QId == 0)">Add</button>
+    <button type="submit" class="btn btn-primary" @onclick="AddQuestion" disabled="@(Question.Id == 0)">Add</button>
+    <ValidationMessage For="@(() => CustomErrorMessage)" />
+    @if (CustomErrorMessage != null)
+    {
+        <div class="text-danger">@CustomErrorMessage</div>
+    }
+    </EditForm>    
 }
 else if (selectedQuestionId > 0)    // a question has been selected
 {
@@ -89,6 +99,8 @@ else if (selectedQuestionId > 0)    // a question has been selected
 
 @code
 {
+    private EditContext EditContext {get; set;} = new EditContext(new Question());
+    private string CustomErrorMessage {get; set;}
     private int selectedQuestionId = 0;
     private Question? selectedQuestion;
     public List<Question> QuestionsToDisplay = new List<Question>();
@@ -99,6 +111,7 @@ else if (selectedQuestionId > 0)    // a question has been selected
 
     protected override async Task OnInitializedAsync()
     {
+        ClearErrorMessages();
         // Load all questions once
         AllQuestions = await DbContext.Questions.ToListAsync();
         AllQuestions.Insert(0, new Question { Id = -1, Text = "New Question" }); // Add "New Question" option        
@@ -107,8 +120,15 @@ else if (selectedQuestionId > 0)    // a question has been selected
 
     private async Task OnQuestionSelected(ChangeEventArgs e)
     {
+        ClearErrorMessages();
         selectedQuestionId = int.Parse(e.Value.ToString());
         selectedQuestion = await DbContext.Questions.FirstOrDefaultAsync(q => q.Id == selectedQuestionId);
+    }
+
+    private void ClearErrorMessages()
+    {
+        CustomErrorMessage = string.Empty;
+        EditContext = new EditContext(Question);  // Reset validation
     }
     private void Next()
     {
@@ -139,35 +159,60 @@ else if (selectedQuestionId > 0)    // a question has been selected
         await DbContext.SaveChangesAsync();
     }
 
-    private int QId {get; set;}
-    private int SId {get;set;}
-    private string QText {get; set;}
-    private string QDescription {get; set;}
+    private Question Question = new Question();
 
     private async Task AddQuestion()
     {
-        var exist = await DbContext.Questions.FirstOrDefaultAsync(q => q.Id == QId);
-        if (exist != null)
+         try
         {
-            selectedQuestionId = QId;
-            selectedQuestion = exist; 
-            return;
+            ClearErrorMessages();
+            // Check for existing question
+            var exist = await DbContext.Questions.FirstOrDefaultAsync(q => q.Id == Question.Id);
+            if (exist != null)
+            {
+                selectedQuestionId = Question.Id;
+                selectedQuestion = exist;
+                return;
+            }
+
+            // Create new question
+            var newQ = new Question 
+            {
+                Id = Question.Id,
+                SurveyId = Question.SurveyId,
+                Text = Question.Text,
+                Description = Question.Description
+            };
+
+            // Begin transaction
+            using (var dbContextTransaction = await DbContext.Database.BeginTransactionAsync())
+            {
+                DbContext.Questions.Add(newQ);
+                await DbContext.SaveChangesAsync();
+                await dbContextTransaction.CommitAsync();
+            }
+            
+            // Reload data
+            await OnInitializedAsync();
+            Question = new Question();
         }
-
-        var newQ = new Question 
+        catch (DbUpdateException ex)
         {
-            Id = QId,
-            SurveyId = SId,
-            Text = QText,
-            Description = QDescription
-        };
-        DbContext.Questions.Add(newQ);
-        await DbContext.SaveChangesAsync();
-        await OnInitializedAsync();
-        QId = 0;
-        SId = 0;
-        QText = String.Empty;
-        QDescription = String.Empty;
+            CustomErrorMessage = $"Database update failed. Please try again. {ex.InnerException.Message}";
+            EditContext.NotifyValidationStateChanged();
+        }
+        catch (ValidationException ex)
+        {
+            // Handle validation errors
+            CustomErrorMessage = ex.Message + ex.InnerException?.Message;
+            EditContext.NotifyValidationStateChanged();
+        }
+        catch (Exception ex)
+        {
+            // Handle general errors
+            CustomErrorMessage = "An unexpected error occurred while trying to add the question to the database. Please try again." +
+                ex.Message + ex.InnerException?.Message;
+            EditContext.NotifyValidationStateChanged();
+        }    
     }
-
 }    
