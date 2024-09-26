@@ -188,7 +188,7 @@ else if (selectedQuestionId > 0)    // a question has been selected
             using (var dbContextTransaction = await DbContext.Database.BeginTransactionAsync())
             {
                 // If getting an error, uncomment the next line
-                //DbContext.ChangeTracker.Entries();
+                //DbContext.ChangeTracker.Clear();
                 DbContext.Questions.Add(newQ);
                 await DbContext.SaveChangesAsync();
                 await dbContextTransaction.CommitAsync();

@@ -4,7 +4,7 @@ namespace SurveyAuth.Models
 {
     public class Survey
     {
-    [Required]
+    //[Required]
     public int Id { get; set; }
     [Required(ErrorMessage = "Survey name is required")]
     public string Name { get; set; }

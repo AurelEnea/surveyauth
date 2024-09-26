@@ -40,7 +40,7 @@
         <tbody>
             <tr>
                 <td>
-                    <input type="number" @bind="Survey.Id" />
+                    <p>@Survey.Id </p>
                 </td>
                 <td>
                     <input type="text" @bind="Survey.Name" />
@@ -59,7 +59,7 @@
         </tbody>
     </table>
 
-    <button type="submit" class="btn btn-primary" @onclick="AddSurvey" disabled="@(Survey.Id == 0)">Add</button>   
+    <button type="submit" class="btn btn-primary" @onclick="AddSurvey" disabled="@(Survey.Name == null)">Add</button>   
     <ValidationMessage For="@(() => CustomErrorMessage)" />
     @if (CustomErrorMessage != null)
     {
@@ -113,6 +113,7 @@ else if (selectedSurveyId > 0)    // An existing Survey has been selected
     public List<Survey> AllSurveys = new List<Survey>();    
     protected override async Task OnInitializedAsync()
     {        
+        Survey = new Survey();
         // Load all Surveys once
         AllSurveys = await DbContext.Surveys.ToListAsync();
         AllSurveys.Insert(0, new Survey { Id = -1, Name = "New Survey" }); // Add "New Survey" option
@@ -133,13 +134,27 @@ else if (selectedSurveyId > 0)    // An existing Survey has been selected
     
     private async Task SaveSurvey ()
     {
-        await DbContext.SaveChangesAsync();
+        try
+        {
+            await DbContext.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
     }
 
     private async Task DeleteSurvey()
     {
-        DbContext.Remove(selectedSurvey);
-        await DbContext.SaveChangesAsync();
+        try
+        {
+            DbContext.Remove(selectedSurvey);
+            await DbContext.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            HandleException(ex);
+        }
     }
 
     private Survey Survey = new Survey();
@@ -160,7 +175,7 @@ else if (selectedSurveyId > 0)    // An existing Survey has been selected
             // Create new survey
             var newS = new Survey 
             {
-                Id = Survey.Id,
+                //Id = Survey.Id,   // Does the db automatically increment Id?
                 Name = Survey.Name,
                 Description = Survey.Description,
                 StartDate = Survey.StartDate,
@@ -171,7 +186,7 @@ else if (selectedSurveyId > 0)    // An existing Survey has been selected
             using (var dbContextTransaction = await DbContext.Database.BeginTransactionAsync())
             {
                 // If getting an error, uncomment the next line
-                //DbContext.ChangeTracker.Entries();
+                //DbContext.ChangeTracker.Clear();
                 DbContext.Surveys.Add(newS);
                 await DbContext.SaveChangesAsync();
                 await dbContextTransaction.CommitAsync();
@@ -179,25 +194,28 @@ else if (selectedSurveyId > 0)    // An existing Survey has been selected
 
             // Reload data
             await OnInitializedAsync();
-            Survey = new Survey();
-        }
-        catch (DbUpdateException ex)
-        {
-            CustomErrorMessage = $"Database update failed. Please try again. {ex.InnerException.Message}";
-            EditContext.NotifyValidationStateChanged();
-        }
-        catch (ValidationException ex)
-        {
-            // Handle validation errors
-            CustomErrorMessage = ex.Message + ex.InnerException?.Message;
-            EditContext.NotifyValidationStateChanged();
+            //Survey = new Survey();
         }
         catch (Exception ex)
         {
-            // Handle general errors
-            CustomErrorMessage = "An unexpected error occurred while trying to add the survey to the database. Please try again." +
-                ex.Message + ex.InnerException?.Message;
-            EditContext.NotifyValidationStateChanged();
+            HandleException(ex);
         }
+    }
+
+    private void HandleException(Exception ex)
+    {
+        if (ex is DbUpdateException dbUpdateEx)
+        {
+            CustomErrorMessage = $"Database update failed. Please try again. {dbUpdateEx.InnerException?.Message}";
+        }
+        else if (ex is ValidationException validationEx)
+        {
+            CustomErrorMessage = validationEx.Message + validationEx.InnerException?.Message;
+        }
+        else
+        {
+            CustomErrorMessage = "An unexpected error occurred. Please try again." + ex.Message + ex.InnerException?.Message;
+        }
+        EditContext.NotifyValidationStateChanged();
     }
 }    

@@ -1,3 +1,4 @@
 {
-    "workbench.externalBrowser": ""
+    "workbench.externalBrowser": "",
+    "window.autoDetectColorScheme": true
 }
