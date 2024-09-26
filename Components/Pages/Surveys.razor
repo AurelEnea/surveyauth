@@ -170,6 +170,8 @@ else if (selectedSurveyId > 0)    // An existing Survey has been selected
             // Begin transaction
             using (var dbContextTransaction = await DbContext.Database.BeginTransactionAsync())
             {
+                // If getting an error, uncomment the next line
+                //DbContext.ChangeTracker.Entries();
                 DbContext.Surveys.Add(newS);
                 await DbContext.SaveChangesAsync();
                 await dbContextTransaction.CommitAsync();
