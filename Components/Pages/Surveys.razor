@@ -11,7 +11,7 @@
 <h1 class="title-spacing">Add/Edit Surveys</h1>
 
 <div>
-    <p>(Select below to edit or add new Survey)</p>
+    <p>(Select below to edit or add new survey)</p>
     <select @onchange="OnSurveySelected">
         @foreach(var survey in AllSurveys)
         {
@@ -20,7 +20,7 @@
     </select>
 </div>
 
-@if (Survey.Id <= 0)    // Option new Survey has been selected by user or default
+@if (Survey.Id <= 0)    // Option new survey has been selected by user or default
 {
     <h4 class="edit-survey">Add new survey</h4>
     <EditForm EditContext="EditContext" >
