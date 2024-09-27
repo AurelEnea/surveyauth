@@ -1,0 +1,17 @@
+@inherits LayoutComponentBase
+
+<div>
+    <h1>From Page Layout</h1>
+    <PageHeader Title="@Title" />
+    <PageContent>
+        @Body
+    </PageContent>
+
+    <p>Title: @Title</p>
+</div>
+
+@code
+{
+    [Parameter]
+    public string Title {get; set;}
+}

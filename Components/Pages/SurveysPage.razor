@@ -1,0 +1,14 @@
+@page "/surveyspage"
+
+@layout PageLayout
+@inherits PageBase
+
+<p>Do we get anyting from SurveysPage?</p>
+@code{
+    protected override async Task OnInitializedAsync()
+    {
+        Title = "Surveys";
+        Pagination = true;
+        await base.OnInitializedAsync();
+    }    
+}

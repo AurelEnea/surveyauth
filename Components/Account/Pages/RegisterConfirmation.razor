@@ -67,7 +67,7 @@ else
             //var absoluteUri = $"{request.Scheme}://{request.Host}/Account/ConfirmEmail";    // 24092024
             emailConfirmationLink = NavigationManager.GetUriWithQueryParameters(
                 //NavigationManager.ToAbsoluteUri("Account/ConfirmEmail").AbsoluteUri,                
-                "Account/ConfirmEmail",     // 24092024 use relative path, needed for codespaces, otherwise it would use "localhost"
+                "Account/ConfirmEmail",     // 24092024 aenea use relative path, needed for codespaces, otherwise it would use "localhost"
                 new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code, ["returnUrl"] = ReturnUrl });
         }
     }
