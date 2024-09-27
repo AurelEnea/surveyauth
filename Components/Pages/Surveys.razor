@@ -20,10 +20,10 @@
     </select>
 </div>
 
-@if (selectedSurveyId <= 0)    // Option new Survey has been selected by user or default
+@if (Survey.Id <= 0)    // Option new Survey has been selected by user or default
 {
     <h4 class="edit-survey">Add new survey</h4>
-    <EditForm EditContext="EditContext" OnValidSubmit="@AddSurvey">
+    <EditForm EditContext="EditContext" >
     <DataAnnotationsValidator />
     <ValidationSummary />            
 
@@ -60,15 +60,16 @@
     </table>
 
     <button type="submit" class="btn btn-primary" @onclick="AddSurvey" disabled="@(Survey.Name == null)">Add</button>   
-    <ValidationMessage For="@(() => CustomErrorMessage)" />
+    <!-- <ValidationMessage For="@(() => CustomErrorMessage)" /> -->
     @if (CustomErrorMessage != null)
     {
         <div class="text-danger">@CustomErrorMessage</div>
     }
     </EditForm>     
 }
-else if (selectedSurveyId > 0)    // An existing Survey has been selected
+else if (Survey.Id > 0)    // An existing Survey has been selected
 {
+    // Consider checking for Survey == null here, we got errors
     <h4 class="edit-survey">Modify existing survey</h4>
     <table class="table table-survey">
         <thead>
@@ -82,19 +83,19 @@ else if (selectedSurveyId > 0)    // An existing Survey has been selected
         <tbody>            
             <tr>
                 <td>
-                    <input type="number" @bind="selectedSurvey.Id" />
+                    <input type="number" @bind="Survey.Id" />
                 </td>
                 <td>
-                   <input type="text" @bind="selectedSurvey.Name" />
+                   <input type="text" @bind="Survey.Name" />
                 </td>
                 <td>
-                   <input type="text" @bind="selectedSurvey.Description" />
+                   <input type="text" @bind="Survey.Description" />
                 </td>
                 <td>
-                    <input type="date" @bind="selectedSurvey.StartDate" />
+                    <input type="date" @bind="Survey.StartDate" />
                 </td>
                 <td>
-                    <input type="date" @bind="selectedSurvey.EndDate" />
+                    <input type="date" @bind="Survey.EndDate" />
                 </td>
             </tr>
         </tbody>
@@ -106,14 +107,16 @@ else if (selectedSurveyId > 0)    // An existing Survey has been selected
 
 @code
 {
-    private EditContext EditContext {get; set;} = new EditContext(new Survey());
+    private Survey Survey = new Survey();
+    private EditContext EditContext {get; set;}
     private string CustomErrorMessage {get; set;}
-    private int selectedSurveyId = 0;
-    private Survey? selectedSurvey;
     public List<Survey> AllSurveys = new List<Survey>();    
     protected override async Task OnInitializedAsync()
     {        
-        Survey = new Survey();
+        ClearErrorMessages();
+        EditContext = new EditContext(Survey);  // Reset validation
+        Survey = new Survey();  
+
         // Load all Surveys once
         AllSurveys = await DbContext.Surveys.ToListAsync();
         AllSurveys.Insert(0, new Survey { Id = -1, Name = "New Survey" }); // Add "New Survey" option
@@ -122,14 +125,20 @@ else if (selectedSurveyId > 0)    // An existing Survey has been selected
     private async Task OnSurveySelected(ChangeEventArgs e)
     {
         ClearErrorMessages();
-        selectedSurveyId = int.Parse(e.Value.ToString());
-        selectedSurvey = await DbContext.Surveys.FirstOrDefaultAsync(q => q.Id == selectedSurveyId);
+        int surveyId = int.Parse(e.Value.ToString());
+        if (surveyId == -1)
+        {
+            Survey = new Survey();  // User wants to add new survey
+        }
+        else
+        {
+            Survey = await DbContext.Surveys.FirstOrDefaultAsync(q => q.Id == surveyId);
+        }
     }
 
     private void ClearErrorMessages()
     {
         CustomErrorMessage = string.Empty;
-        EditContext = new EditContext(Survey);  // Reset validation
     }
     
     private async Task SaveSurvey ()
@@ -148,16 +157,16 @@ else if (selectedSurveyId > 0)    // An existing Survey has been selected
     {
         try
         {
-            DbContext.Remove(selectedSurvey);
+            DbContext.Remove(Survey);
             await DbContext.SaveChangesAsync();
+            await OnInitializedAsync();
         }
         catch (Exception ex)
         {
             HandleException(ex);
         }
     }
-
-    private Survey Survey = new Survey();
+    
     private async Task AddSurvey()
     {
         try
@@ -167,34 +176,24 @@ else if (selectedSurveyId > 0)    // An existing Survey has been selected
             var exist = await DbContext.Surveys.FirstOrDefaultAsync(q => q.Id == Survey.Id);
             if (exist != null)
             {
-                selectedSurveyId = Survey.Id;
-                selectedSurvey = exist;
                 return;
             }
 
             // Create new survey
             var newS = new Survey 
             {
-                //Id = Survey.Id,   // Does the db automatically increment Id?
                 Name = Survey.Name,
                 Description = Survey.Description,
                 StartDate = Survey.StartDate,
                 EndDate = Survey.EndDate
             };
 
-            // Begin transaction
-            using (var dbContextTransaction = await DbContext.Database.BeginTransactionAsync())
-            {
-                // If getting an error, uncomment the next line
-                //DbContext.ChangeTracker.Clear();
-                DbContext.Surveys.Add(newS);
-                await DbContext.SaveChangesAsync();
-                await dbContextTransaction.CommitAsync();
-            }
-
+            DbContext.Surveys.Add(newS);
+            await DbContext.SaveChangesAsync();
+                
             // Reload data
             await OnInitializedAsync();
-            //Survey = new Survey();
+
         }
         catch (Exception ex)
         {

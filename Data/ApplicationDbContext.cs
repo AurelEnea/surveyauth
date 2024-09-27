@@ -14,7 +14,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         string dbPath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "app.db");
-        optionsBuilder.UseSqlite($"Data Source={dbPath}");
+        optionsBuilder.UseSqlite($"Data Source={dbPath}")
+            .EnableSensitiveDataLogging(true)
+            .EnableDetailedErrors(true);
     }
 
 }
