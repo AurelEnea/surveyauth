@@ -1,30 +1,58 @@
-@typeparam TItem
+@typeparam TItem where TItem : class
+@using SurveyAuth.Data
+@inject ApplicationDbContext DbContext
+@using Microsoft.EntityFrameworkCore
 
+
+<h1 class="title-spacing">Add/Edit @(typeName + "s")</h1>
 <div>
-    <h1>Welcome to @Title</h1>
-    <p>@Explanation</p>
-    <table>
-        <!-- Render fields dynamically based on TItem -->
-        @foreach (var field in Fields)
+    <p>(Select below to edit or add new @typeName)</p>
+    <select @onchange="(e) => SelectItem((TItem)e.Value)">
+        @foreach (var item in Items)
         {
-            <tr>
-                <td>@field</td>
-                <td>@context.GetType().GetProperty(field).GetValue(context)</td>
-            </tr>
+            <option value="@item?.GetType().GetProperties()[0].GetValue(item)">
+                @item?.GetType().GetProperties()[0].GetValue(item) - @item?.GetType().GetProperties()[1].GetValue(item)
+            </option>
         }
-    </table>
-    <button @onclick="Update">Update</button>
-    <button @onclick="Delete">Delete</button>
-    <button @onclick="Add">Add</button>
+    </select>  
 </div>
 
 @code {
-    [Parameter] public string Title { get; set; }
-    [Parameter] public string Explanation { get; set; }
-    [Parameter] public List<string> Fields { get; set; }
-    [Parameter] public TItem context { get; set; }
+    private string typeName = typeof(TItem).Name.Split('.').Last();    
+    private List<TItem> Items { get; set; }
+    private TItem SelectedItem { get; set; }
 
-    private void Update() { /* Update logic */ }
-    private void Delete() { /* Delete logic */ }
-    private void Add() { /* Add logic */ }
+    protected override async Task OnInitializedAsync()
+    {
+        Items = await DbContext.Set<TItem>().ToListAsync();
+    }    
+
+    private void SelectItem(TItem item)
+    {
+        SelectedItem = item;
+    }
+
+        private async Task AddNewItem()
+    {
+        var newItem = Activator.CreateInstance<TItem>();
+        DbContext.Set<TItem>().Add(newItem);
+        await DbContext.SaveChangesAsync();
+        Items = await DbContext.Set<TItem>().ToListAsync();
+    }
+
+    private async Task EditItem()
+    {
+        DbContext.Set<TItem>().Update(SelectedItem);
+        await DbContext.SaveChangesAsync();
+        Items = await DbContext.Set<TItem>().ToListAsync();
+    }
+
+    private async Task DeleteItem()
+    {
+        DbContext.Set<TItem>().Remove(SelectedItem);
+        await DbContext.SaveChangesAsync();
+        Items = await DbContext.Set<TItem>().ToListAsync();
+    }
 }
+
+
