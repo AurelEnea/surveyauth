@@ -1,0 +1,136 @@
+@page "/answers/{surveyId:int}"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using SurveyAuth.Data
+@using SurveyAuth.Models
+@using System.Security.Claims
+@inject ApplicationDbContext DbContext
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize]
+
+<PageTitle>Survey Blazor</PageTitle>
+
+<h1 class="title-spacing">Hello, @Respondent.Name!</h1>
+<h4> Answers for survey: "@Survey.Name"</h4>
+
+<EditForm Model="@Answer" OnSubmit="HandleSubmit">    
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Question</th>
+            <th>Type</th>
+            <th>Answer</th>
+            <th>Last updated</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var answer in AnswersToDisplay)
+        {
+            <tr>
+                <td>
+                    <p>(@answer.QuestionId) "@answer.Question.Text" </p>
+                </td>
+                <td>
+                    <p>@answer.Question.Description</p>
+                </td>
+                <td>
+                    <input type="text" @bind="answer.Text" />
+                </td>
+                <td>
+                    <p>@answer.LastModified</p>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+</EditForm>
+
+<button class="btn btn-primary" @onclick="Previous" disabled="@(currPage == 0)">Previous</button>
+<button class="btn btn-primary" @onclick="Next" disabled="@(currPage == (AllAnswers.Count - 1) / perPage)">Next</button>
+<button class="btn btn-primary" @onclick="SaveAnswers">Save</button>
+
+
+@code
+{
+    [Parameter] public int SurveyId {get; set;} // Get it from Home.razor
+    public Survey Survey {get; set;} = new Survey();
+    private string RespondentId {get; set;} // get it from authentication
+    public ApplicationUser Respondent {get; set;} = new ApplicationUser();
+    public List<Answer> AllAnswers = new List<Answer>();
+    public List<Answer> AnswersToDisplay = new List<Answer>();
+    public List<Question> AllQuestions = new List<Question>();    
+    private int currPage = 0;
+    private const int perPage = 3; // set number of items displayed per page
+    public Answer Answer {get; set;} = new Answer();
+    protected override async Task OnParametersSetAsync()
+    {
+        Survey = await DbContext.Surveys.FirstOrDefaultAsync(s => s.Id == SurveyId);
+        Respondent = await DbContext.Users.FirstOrDefaultAsync(u => u.Id == RespondentId);
+    }        
+    protected override async Task OnInitializedAsync()
+    {
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync().ConfigureAwait(false);        
+        RespondentId = authenticationState.User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        // Load all questions/answers for this survey once
+        AllAnswers = await DbContext.Answers.Include(a => a.Question).Where(a => a.Question.SurveyId == SurveyId & a.ApplicationUserId == RespondentId).ToListAsync();
+        if (AllAnswers.Count == 0)
+        {
+            AllQuestions = await DbContext.Questions.Where(q => q.SurveyId == SurveyId).ToListAsync();
+            await AddAnswersAsync();    // Respondent is running this survey for the first time
+            AllAnswers = await DbContext.Answers.Include(a => a.Question).Where(a => a.Question.SurveyId == SurveyId & a.ApplicationUserId == RespondentId).ToListAsync();
+        }
+        AnswersToDisplay = AllAnswers.Skip(currPage * perPage).Take(perPage).ToList();
+    }
+
+    private void Next()
+    {
+        if (currPage < (AllAnswers.Count - 1) / perPage)
+        {
+            currPage++;
+            AnswersToDisplay = AllAnswers.Skip(currPage * perPage).Take(perPage).ToList();
+        }
+    }
+
+    private void Previous()    
+    {
+        if (currPage > 0)
+        {
+            currPage--;
+            AnswersToDisplay = AllAnswers.Skip(currPage * perPage).Take(perPage).ToList();
+        }
+    }
+
+    private void HandleSubmit()
+    {
+        SaveAnswers();
+    }
+
+    private async Task SaveAnswers ()
+    {
+        await DbContext.SaveChangesAsync();
+    }
+
+    
+    private async Task AddAnswersAsync()
+    {
+        foreach (var q in AllQuestions)
+        {
+            var newA = new Answer 
+            {
+                //Id = QId,
+                ApplicationUserId = RespondentId,
+                QuestionId = q.Id,
+                Text = String.Empty
+
+            };
+            DbContext.Answers.Add(newA);
+        }
+        await DbContext.SaveChangesAsync();
+    }
+
+}    

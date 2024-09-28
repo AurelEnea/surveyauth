@@ -1,0 +1,20 @@
+<div class="page-content">
+    <h2>Coming from PageContent.razor</h2>
+    @ChildContent
+</div>
+
+@code {
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+}
+
+<style>
+    .page-content {
+        padding: 1rem;
+        border: 1px solid #ccc;
+        background-color: #f0f0f0;
+    }
+    h2 {
+        color: #333;
+    }
+</style>

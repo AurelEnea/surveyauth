@@ -1,0 +1,30 @@
+@typeparam TItem
+
+<div>
+    <h1>Welcome to @Title</h1>
+    <p>@Explanation</p>
+    <table>
+        <!-- Render fields dynamically based on TItem -->
+        @foreach (var field in Fields)
+        {
+            <tr>
+                <td>@field</td>
+                <td>@context.GetType().GetProperty(field).GetValue(context)</td>
+            </tr>
+        }
+    </table>
+    <button @onclick="Update">Update</button>
+    <button @onclick="Delete">Delete</button>
+    <button @onclick="Add">Add</button>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; }
+    [Parameter] public string Explanation { get; set; }
+    [Parameter] public List<string> Fields { get; set; }
+    [Parameter] public TItem context { get; set; }
+
+    private void Update() { /* Update logic */ }
+    private void Delete() { /* Delete logic */ }
+    private void Add() { /* Add logic */ }
+}
