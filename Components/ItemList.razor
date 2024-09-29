@@ -1,21 +1,60 @@
-@typeparam TItem where TItem : class
+@typeparam TItem where TItem : class, new()
 @using SurveyAuth.Data
-@inject ApplicationDbContext DbContext
 @using Microsoft.EntityFrameworkCore
-
+@using static PropertyHelper
 
 <h1 class="title-spacing">Add/Edit @(typeName + "s")</h1>
 <div>
     <p>(Select below to edit or add new @typeName)</p>
-    <select @onchange="(e) => SelectItem((TItem)e.Value)">
+    <select @onchange="SelectItem" aria-label="Select @typeName">
         @foreach (var item in Items)
         {
-            <option value="@item?.GetType().GetProperties()[0].GetValue(item)">
-                @item?.GetType().GetProperties()[0].GetValue(item) - @item?.GetType().GetProperties()[1].GetValue(item)
+            <option value="@GetId(item)">
+                @GetDisplayName(item)
             </option>
         }
     </select>  
 </div>
+
+@if (IsNewItem(SelectedItem))    
+{
+    <h4 class="edit-survey">Add new @typeName</h4>
+}
+else        
+{
+    <h4 class="edit-survey">Modify existing @typeName</h4>
+}
+
+<table class="table table-survey" aria-label="@typeName table">                                
+    <thead>
+        <tr> 
+            @foreach (var prop in typeof(TItem).GetProperties())
+            {                
+                <th>@prop.Name</th>                    
+            }
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            @foreach (var prop in typeof(TItem).GetProperties())
+            {                
+                <td>
+                    @GetPropertyValue(SelectedItem, prop)
+                </td>             
+            }
+        </tr>
+    </tbody>
+</table>
+
+@if (IsNewItem(SelectedItem))  
+{
+    <button type="submit" class="btn btn-primary" @onclick="@(async () => await AddNewItem(SelectedItem))" disabled="@SelectedItem == null">Add</button>   
+}
+else    
+{
+    <button class="btn btn-primary" @onclick="EditSelectedItemAsync">Update</button>
+    <button class="btn btn-primary" @onclick="DeleteSelectedItemAsync">Delete</button>
+}
 
 @code {
     private string typeName = typeof(TItem).Name.Split('.').Last();    
@@ -24,35 +63,37 @@
 
     protected override async Task OnInitializedAsync()
     {
-        Items = await DbContext.Set<TItem>().ToListAsync();
-    }    
+        SelectedItem = new TItem();     
+        var idProp = GetIdProperty(typeof(TItem));
+        var nameProp = GetDisplayNameProperty(typeof(TItem));
+        idProp.SetValue(SelectedItem, Convert.ChangeType(-1, idProp.PropertyType));
+        nameProp.SetValue(SelectedItem, Convert.ChangeType("New Item", nameProp.PropertyType));
 
-    private void SelectItem(TItem item)
-    {
-        SelectedItem = item;
+        Items = await GetItems<TItem>();
+        Items.Insert(0, SelectedItem); // Add "New Item" option
     }
 
-        private async Task AddNewItem()
+    private void SelectItem(ChangeEventArgs e)
     {
-        var newItem = Activator.CreateInstance<TItem>();
-        DbContext.Set<TItem>().Add(newItem);
-        await DbContext.SaveChangesAsync();
-        Items = await DbContext.Set<TItem>().ToListAsync();
+        var selectedItem = (TItem)e.Value;
+        if (GetId(selectedItem).Equals("New Item"))
+        {
+            SelectedItem = new TItem();     
+        }
+        else
+        {
+            SelectedItem = selectedItem;    
+        }
     }
 
-    private async Task EditItem()
+    private async Task EditSelectedItemAsync()
     {
-        DbContext.Set<TItem>().Update(SelectedItem);
-        await DbContext.SaveChangesAsync();
-        Items = await DbContext.Set<TItem>().ToListAsync();
+        await EditItem(SelectedItem);
     }
 
-    private async Task DeleteItem()
+    private async Task DeleteSelectedItemAsync()
     {
-        DbContext.Set<TItem>().Remove(SelectedItem);
-        await DbContext.SaveChangesAsync();
-        Items = await DbContext.Set<TItem>().ToListAsync();
+        await DeleteItem(SelectedItem);
     }
 }
-
 
