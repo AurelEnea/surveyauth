@@ -1,13 +1,21 @@
 @using Microsoft.AspNetCore.Components
 @using System.Reflection
+@using static PropertyHelper
 
 
-@if (Property != null && ShouldDisplay.Display(Property))
+@if (!IsHidden(Property, Item))
 {
     @switch (Property.PropertyType.Name)
     {
         case "Int32":
-            <p>@GetValue(Item, Property)</p>
+            if (IsReadOnly(Property, Item))
+            {
+                <p>@GetValue(Item, Property)</p>
+            }
+            else
+            {
+                <input type="number" style="width: @width}px" @bind="_valueAsString" />
+            }            
             break;
         case "String":
             <input type="text" @bind="_valueAsString" />
@@ -15,8 +23,8 @@
         case "Boolean":
             <input type="checkbox" @bind="_valueAsBool" />
             break;
-        case "DateTime":
-            <input type="date" @bind="_valueAsDate" />
+        case "DateOnly":
+            <input type="date" @bind="_valueAsDateOnly" />
             break;
         default:
             <p>@GetValue(Item, Property)</p>
@@ -25,18 +33,14 @@
 }
 
 @code {
-    public static class ShouldDisplay 
-    {
-        public static bool Display(PropertyInfo property) 
-        {
-            return !PropertyHelper.IsHidden(property);
-        }
-    }
+    
     [Parameter]
     public PropertyInfo Property { get; set; }
 
     [Parameter]
     public object Item { get; set; }
+
+    int? width;
 
     private object _value;
 
@@ -52,15 +56,16 @@
         set => SetValue(value);
     }
 
-    private DateTime _valueAsDate
+    private DateOnly _valueAsDateOnly
     {
-        get => (DateTime)_value;
+        get => (DateOnly)_value;
         set => SetValue(value);
     }
 
     protected override void OnParametersSet()
     {
         _value = Property.GetValue(Item);
+        width = PropertyHelper.GetFieldWidth(Property, Item);
     }
 
     private object GetValue(object item, PropertyInfo property)

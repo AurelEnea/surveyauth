@@ -6,6 +6,18 @@ using SurveyAuth.Data;
 public static class PropertyHelper
 {
     private static readonly ApplicationDbContext _context;
+    
+    private static SurveyConfig _config;
+
+    public static SurveyConfig Config
+    {
+        get
+        {
+            if (_config == null)
+                _config = ConfigService.GetConfig();
+            return _config;
+        }
+    }
 
     static PropertyHelper()
     {
@@ -16,14 +28,25 @@ public static class PropertyHelper
         _context = new ApplicationDbContext(options);
     }
 
-    //private static readonly ConfigService configService = new ConfigService();
 
-    public static bool IsHidden(PropertyInfo property)
+    public static bool IsHidden(PropertyInfo property, object item = null)
     {
-        SurveyConfig config = ConfigService.GetConfig();
-        foreach (var hiddenField in config.HiddenFields)
+        // If item is provided, check item-level hidden fields
+        if (item != null)
         {
-            if (hiddenField.Item == "all" || hiddenField.Item == property.DeclaringType.Name)
+            foreach (var hiddenField in Config.HiddenFields)
+            {
+                if (hiddenField.Item == item.GetType().Name)
+                {
+                    if (hiddenField.Fields.Contains(property.Name))
+                        return true;
+                }
+            }
+        }
+        // Fall back to field-level hidden fields
+        foreach (var hiddenField in Config.HiddenFields)
+        {
+            if (hiddenField.Item == "all")
             {
                 if (hiddenField.Fields.Contains(property.Name))
                     return true;
@@ -31,6 +54,27 @@ public static class PropertyHelper
         }
         return false;
     }
+
+    public static bool IsReadOnly(PropertyInfo property, object item)
+    {
+        // Implement read-only logic using Config
+        foreach (var readOnlyField in Config.ReadOnlyFields)
+        {
+            if (readOnlyField.Item == "all" || readOnlyField.Item == item.GetType().Name)
+            {
+                if (readOnlyField.Fields.Contains(property.Name))
+                    return true;
+            }
+        }
+        return false;
+    }        
+
+    public static int? GetFieldWidth(PropertyInfo property, object item)
+    {
+        return Config.FieldSizes
+            .FirstOrDefault(fs => fs.Item == item.GetType().Name && fs.Field == property.Name)?.Width;
+    }
+    
 
     public static async Task<List<TItem>> GetItems<TItem>() where TItem : class
     {

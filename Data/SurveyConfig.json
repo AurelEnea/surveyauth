@@ -6,12 +6,35 @@
       },
       {
         "Item": "Question",
-        "Fields": ["SurveyId"]
+        "Fields": [""]
       }
     ],
     "DefaultId": -1,
     "DropdownFields": {
       "Question": ["Id", "Name"],
       "Survey": ["Name"]
-    }
+    },
+    "ReadOnlyFields": [
+      {
+        "Item": "all",
+        "Fields": [""]
+      },
+      {
+        "Item": "Answer",
+        "Fields": ["LastModified"]
+      }
+    ],
+    "FieldSizes": [
+      {
+        "Item": "Question",
+        "Field": "Description",
+        "Width": 500,
+        "SurveyId": 20
+      },
+      {
+        "Item": "Answer",
+        "Field": "Text",
+        "Width": 400
+      }
+    ]
   }
