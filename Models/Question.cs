@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace SurveyAuth.Models
@@ -7,6 +8,7 @@ namespace SurveyAuth.Models
         public int Id {get; set;}
         public int SurveyId {get; set;}
         [Required(ErrorMessage = "Question text is required")]
+        [DisplayName("Name")]
         public string Text {get; set;}
         public string Description {get; set;}
         public Survey Survey {get; set;}

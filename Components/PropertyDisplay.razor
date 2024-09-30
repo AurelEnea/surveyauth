@@ -1,0 +1,96 @@
+@using Microsoft.AspNetCore.Components
+@using System.Reflection
+
+
+@if (Property != null && ShouldDisplay.Display(Property))
+{
+    @switch (Property.PropertyType.Name)
+    {
+        case "Int32":
+            <p>@GetValue(Item, Property)</p>
+            break;
+        case "String":
+            <input type="text" @bind="_valueAsString" />
+            break;
+        case "Boolean":
+            <input type="checkbox" @bind="_valueAsBool" />
+            break;
+        case "DateTime":
+            <input type="date" @bind="_valueAsDate" />
+            break;
+        default:
+            <p>@GetValue(Item, Property)</p>
+            break;
+    }
+}
+
+@code {
+    public static class ShouldDisplay 
+    {
+        public static bool Display(PropertyInfo property) 
+        {
+            return !PropertyHelper.IsHidden(property);
+        }
+    }
+    [Parameter]
+    public PropertyInfo Property { get; set; }
+
+    [Parameter]
+    public object Item { get; set; }
+
+    private object _value;
+
+    private string _valueAsString
+    {
+        get => GetValueAsString();
+        set => SetValueFromString(value);
+    }
+
+    private bool _valueAsBool
+    {
+        get => (bool)_value;
+        set => SetValue(value);
+    }
+
+    private DateTime _valueAsDate
+    {
+        get => (DateTime)_value;
+        set => SetValue(value);
+    }
+
+    protected override void OnParametersSet()
+    {
+        _value = Property.GetValue(Item);
+    }
+
+    private object GetValue(object item, PropertyInfo property)
+    {
+        return property.GetValue(item);
+    }
+
+    private void SetValue(object value)
+    {
+        Property.SetValue(Item, value);
+    }
+
+    private string GetValueAsString()
+    {
+        return _value?.ToString();
+    }
+
+    private void SetValueFromString(string value)
+    {
+        if (Property.PropertyType == typeof(bool))
+        {
+            SetValue(bool.Parse(value));
+        }
+        else if (Property.PropertyType == typeof(DateTime))
+        {
+            SetValue(DateTime.Parse(value));
+        }
+        else
+        {
+            SetValue(value);
+        }
+    }    
+}

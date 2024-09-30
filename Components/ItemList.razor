@@ -39,20 +39,20 @@ else
             @foreach (var prop in typeof(TItem).GetProperties())
             {                
                 <td>
-                    @GetPropertyValue(SelectedItem, prop)
-                </td>             
-            }
+                    <PropertyDisplay Property="prop" Item="SelectedItem" />
+                </td>
+            }                        
         </tr>
     </tbody>
 </table>
 
 @if (IsNewItem(SelectedItem))  
 {
-    <button type="submit" class="btn btn-primary" @onclick="@(async () => await AddNewItem(SelectedItem))" disabled="@SelectedItem == null">Add</button>   
+    <button type="submit" class="btn btn-primary" @onclick="@(async () => await AddItem(SelectedItem))" disabled="@SelectedItem == null">Add</button>   
 }
 else    
 {
-    <button class="btn btn-primary" @onclick="EditSelectedItemAsync">Update</button>
+    <button class="btn btn-primary" @onclick="UpdateSelectedItemAsync">Update</button>
     <button class="btn btn-primary" @onclick="DeleteSelectedItemAsync">Delete</button>
 }
 
@@ -62,38 +62,36 @@ else
     private TItem SelectedItem { get; set; }
 
     protected override async Task OnInitializedAsync()
-    {
-        SelectedItem = new TItem();     
-        var idProp = GetIdProperty(typeof(TItem));
-        var nameProp = GetDisplayNameProperty(typeof(TItem));
-        idProp.SetValue(SelectedItem, Convert.ChangeType(-1, idProp.PropertyType));
-        nameProp.SetValue(SelectedItem, Convert.ChangeType("New Item", nameProp.PropertyType));
-
+    {        
         Items = await GetItems<TItem>();
+        SelectedItem = new TItem();
+        SelectedItem = (TItem)InitializeItem(SelectedItem);
         Items.Insert(0, SelectedItem); // Add "New Item" option
     }
 
-    private void SelectItem(ChangeEventArgs e)
-    {
-        var selectedItem = (TItem)e.Value;
-        if (GetId(selectedItem).Equals("New Item"))
-        {
-            SelectedItem = new TItem();     
-        }
-        else
-        {
-            SelectedItem = selectedItem;    
-        }
+    private async void SelectItem(ChangeEventArgs e)
+    {        
+        int itemId = int.Parse(e.Value.ToString());
+        var selectedItem = await GetItemById<TItem>(itemId);
+        SelectedItem = selectedItem ?? new TItem();
     }
 
-    private async Task EditSelectedItemAsync()
+    private async Task UpdateSelectedItemAsync()
     {
-        await EditItem(SelectedItem);
+        await UpdateItem(SelectedItem);
+        await OnInitializedAsync();
     }
 
     private async Task DeleteSelectedItemAsync()
     {
         await DeleteItem(SelectedItem);
+        await OnInitializedAsync();
+    }
+
+    private async Task AddNewItemAsync()
+    {
+        await AddItem(SelectedItem);
+        await OnInitializedAsync();
     }
 }
 

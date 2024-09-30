@@ -3,33 +3,17 @@ using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using SurveyAuth.Data;
 
-public static class PropertyHelper
+public static class PropertyHelperOld
 {
     private static readonly ApplicationDbContext _context;
 
-    static PropertyHelper()
+    static PropertyHelperOld()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseSqlite("DefaultConnection")
             .Options;
 
         _context = new ApplicationDbContext(options);
-    }
-
-    //private static readonly ConfigService configService = new ConfigService();
-
-    public static bool IsHidden(PropertyInfo property)
-    {
-        SurveyConfig config = ConfigService.GetConfig();
-        foreach (var hiddenField in config.HiddenFields)
-        {
-            if (hiddenField.Item == "all" || hiddenField.Item == property.DeclaringType.Name)
-            {
-                if (hiddenField.Fields.Contains(property.Name))
-                    return true;
-            }
-        }
-        return false;
     }
 
     public static async Task<List<TItem>> GetItems<TItem>() where TItem : class

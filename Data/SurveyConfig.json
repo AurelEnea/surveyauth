@@ -1,0 +1,17 @@
+{
+    "HiddenFields": [
+      {
+        "Item": "all",
+        "Fields": ["Id"]
+      },
+      {
+        "Item": "Question",
+        "Fields": ["SurveyId"]
+      }
+    ],
+    "DefaultId": -1,
+    "DropdownFields": {
+      "Question": ["Id", "Name"],
+      "Survey": ["Name"]
+    }
+  }
