@@ -11,7 +11,7 @@
     ],
     "DefaultId": -1,
     "DropdownFields": {
-      "Question": ["Id", "Name"],
+      "Question": ["Id", "Text"],
       "Survey": ["Name"]
     },
     "ReadOnlyFields": [
@@ -29,7 +29,8 @@
         "Item": "Question",
         "Field": "Description",
         "Width": 500,
-        "SurveyId": 20
+        "Field": "SurveyId",
+        "Width": 50
       },
       {
         "Item": "Answer",

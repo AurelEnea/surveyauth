@@ -74,8 +74,19 @@ public static class PropertyHelper
         return Config.FieldSizes
             .FirstOrDefault(fs => fs.Item == item.GetType().Name && fs.Field == property.Name)?.Width;
     }
-    
 
+    public static string GetDropDownDisplay(object item)
+    {
+        var itemType = item.GetType().Name;
+        var dropdownFields = Config.DropdownFields[itemType];
+        return string.Join(" - ", dropdownFields.Select(field => 
+            GetValue(item, field)));
+    }
+
+    static object GetValue(object item, string propertyName)
+    {
+        return item.GetType().GetProperty(propertyName).GetValue(item);
+    }
     public static async Task<List<TItem>> GetItems<TItem>() where TItem : class
     {
         return await _context.Set<TItem>().ToListAsync();
