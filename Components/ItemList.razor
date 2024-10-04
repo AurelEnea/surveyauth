@@ -1,6 +1,4 @@
 @typeparam TItem where TItem : class, new()
-@using Microsoft.EntityFrameworkCore.Metadata.Internal
-@using Microsoft.EntityFrameworkCore
 @using SurveyAuth.Data
 @using static PropertyHelper
 
@@ -30,11 +28,11 @@ else
 <table class="table" aria-label="@typeName table">                                
     <thead>
         <tr> 
-            @foreach (var prop in typeof(TItem).GetProperties())
+            @foreach (var property in typeof(TItem).GetProperties())
             {   
-                @if (!IsHidden(prop, SelectedItem))
+                @if (!IsHidden(property, SelectedItem))
                 {             
-                    <th>@prop.Name</th>                    
+                    <th>@property.Name</th>                    
                 }
             }
         </tr>
