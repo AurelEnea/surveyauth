@@ -57,7 +57,6 @@ public static class PropertyHelper
 
     public static bool IsReadOnly(PropertyInfo property, object item)
     {
-        // Implement read-only logic using Config
         foreach (var readOnlyField in Config.ReadOnlyFields)
         {
             if (readOnlyField.Item == "all" || readOnlyField.Item == item.GetType().Name)
@@ -68,6 +67,11 @@ public static class PropertyHelper
         }
         return false;
     }        
+
+    public static string GetFieldWidthStyle(object item, PropertyInfo property) 
+    {
+        return $"width:{GetFieldWidth(property, item)}px";
+    }
 
     public static int? GetFieldWidth(PropertyInfo property, object item)
     {
@@ -83,10 +87,16 @@ public static class PropertyHelper
             GetValue(item, field)));
     }
 
-    static object GetValue(object item, string propertyName)
+    public static object GetValue(object item, string propertyName)
     {
-        return item.GetType().GetProperty(propertyName).GetValue(item);
+        var propertyValue = item.GetType().GetProperty(propertyName).GetValue(item);
+        if (propertyValue is DateOnly dateOnly)
+        {
+            return dateOnly.ToString("dd-mmm-yy"); // or dateOnly.ToString("MM/dd/yyyy") for specific format
+        }
+        return propertyValue;
     }
+    
     public static async Task<List<TItem>> GetItems<TItem>() where TItem : class
     {
         return await _context.Set<TItem>().ToListAsync();
@@ -94,13 +104,14 @@ public static class PropertyHelper
 
     public static object InitializeItem(object item)        
     {
+        var typeName = item.GetType().Name.Split('.').Last();
         var idProperty = item.GetType().GetProperty("Id");
         idProperty.SetValue(item, GetDefaultIdValue(idProperty.PropertyType));
 
         var nameProperty = GetDisplayNameProperty(item.GetType());
         if (nameProperty != null)
         {
-            nameProperty.SetValue(item, "New Item");
+            nameProperty.SetValue(item, $"New {typeName}");
         }
         else
         {

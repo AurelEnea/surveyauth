@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "/workspaces/surveyauth/SurveyAuth.csproj": {}
+    "D:\\v3\\SurveyAuth.csproj": {}
   },
   "projects": {
-    "/workspaces/surveyauth/SurveyAuth.csproj": {
+    "D:\\v3\\SurveyAuth.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/workspaces/surveyauth/SurveyAuth.csproj",
+        "projectUniqueName": "D:\\v3\\SurveyAuth.csproj",
         "projectName": "SurveyAuth",
-        "projectPath": "/workspaces/surveyauth/SurveyAuth.csproj",
-        "packagesPath": "/home/codespace/.nuget/packages/",
-        "outputPath": "/workspaces/surveyauth/obj/",
+        "projectPath": "D:\\v3\\SurveyAuth.csproj",
+        "packagesPath": "C:\\Users\\me\\.nuget\\packages\\",
+        "outputPath": "D:\\v3\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/home/codespace/.nuget/NuGet/NuGet.Config"
+          "C:\\Users\\me\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -83,7 +83,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/8.0.401/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.401/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

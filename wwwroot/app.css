@@ -65,7 +65,7 @@ margin-top: 50px;
 
 .table-question td:first-child input, 
 .table-question td:nth-child(2) input {
-width: 75px;
+
 margin-right: 10px;
 }
 .table-question td:nth-child(3) input, .table-question td:nth-child(4) input {
@@ -80,7 +80,7 @@ margin-bottom: 20px;
 margin-top: 50px;
 }
 .table-respondent td:first-child input {
-width: 75px;
+
 margin-right: 10px;
 }
 .table-respondent td:nth-child(2) input, .table-respondent td:nth-child(3) input {
@@ -95,7 +95,7 @@ margin-bottom: 20px;
 margin-top: 50px;
 }
 .table-survey td:first-child input {
-width: 75px;
+
 margin-right: 10px;
 }
 .table-survey td:nth-child(2) input, .table-survey td:nth-child(3) input {

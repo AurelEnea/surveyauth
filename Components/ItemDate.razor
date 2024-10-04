@@ -1,0 +1,24 @@
+@using Microsoft.AspNetCore.Components
+
+<input type="date" value="@dateValue.ToString("yyyy-MM-dd")" @onchange="HandleChange" />    
+
+@code {
+    [Parameter]
+    public object Item { get; set; }
+
+    [Parameter]
+    public string PropertyName { get; set; }
+
+    private DateOnly dateValue;
+
+    protected override void OnParametersSet()
+    {
+        dateValue = (DateOnly)Item.GetType().GetProperty(PropertyName).GetValue(Item);
+    }
+
+    private void HandleChange(ChangeEventArgs e)
+    {
+        dateValue = DateOnly.Parse(e.Value.ToString());
+        Item.GetType().GetProperty(PropertyName).SetValue(Item, dateValue);
+    }
+}

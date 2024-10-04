@@ -1,11 +1,13 @@
 @typeparam TItem where TItem : class, new()
-@using SurveyAuth.Data
+@using Microsoft.EntityFrameworkCore.Metadata.Internal
 @using Microsoft.EntityFrameworkCore
+@using SurveyAuth.Data
 @using static PropertyHelper
 
 <h1 class="title-spacing">Add/Edit @(typeName + "s")</h1>
 <div>
     <p>(Select below to edit or add new @typeName)</p>
+    
     <select @onchange="SelectItem" aria-label="Select @typeName">
         @foreach (var item in Items)
         {
@@ -25,23 +27,29 @@ else
     <h4 class="edit-survey">Modify existing @typeName</h4>
 }
 
-<table class="table table-survey" aria-label="@typeName table">                                
+<table class="table" aria-label="@typeName table">                                
     <thead>
         <tr> 
             @foreach (var prop in typeof(TItem).GetProperties())
-            {                
-                <th>@prop.Name</th>                    
+            {   
+                @if (!IsHidden(prop, SelectedItem))
+                {             
+                    <th>@prop.Name</th>                    
+                }
             }
         </tr>
     </thead>
     <tbody>
         <tr>
-            @foreach (var prop in typeof(TItem).GetProperties())
-            {                
-                <td>
-                    <PropertyDisplay Property="prop" Item="SelectedItem" />
-                </td>
-            }                        
+            @foreach (var property in typeof(TItem).GetProperties())
+            {
+                @if (!IsHidden(property, SelectedItem))
+                {
+                    <td>
+                        <PropertyDisplay SelectedItem="@SelectedItem" property="@property" />
+                    </td>
+                }
+            }           
         </tr>
     </tbody>
 </table>

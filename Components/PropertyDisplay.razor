@@ -3,99 +3,40 @@
 @using static PropertyHelper
 
 
-@if (!IsHidden(Property, Item))
+@if (IsReadOnly(property, SelectedItem))
 {
-    @switch (Property.PropertyType.Name)
+    <p>@GetValue(SelectedItem, property.Name)</p>
+}
+else
+{
+    @switch (property.PropertyType.Name)
     {
-        case "Int32":
-            if (IsReadOnly(Property, Item))
-            {
-                <p>@GetValue(Item, Property)</p>
-            }
-            else
-            {
-                <input type="number" style="width: @width.ToString()px" @bind="_valueAsString" />
-            }            
-            break;
         case "String":
-            <input type="text" @bind="_valueAsString" />
+            <input type="text" value="@GetValue(SelectedItem, property.Name)"
+                @oninput="(e) => property.SetValue(SelectedItem, e.Value)" />
+                
             break;
-        case "Boolean":
-            <input type="checkbox" @bind="_valueAsBool" />
+        case "Int32":
+            <input type="number" value="@GetValue(SelectedItem, property.Name)" 
+                    style="@GetFieldWidthStyle(SelectedItem, property)" />
             break;
         case "DateOnly":
-            <input type="date" @bind="_valueAsDateOnly" />
+            <ItemDate Item="SelectedItem" PropertyName="@property.Name" />                                    
+            break;
+        case "Boolean":
+            <input type="checkbox" checked="@((bool)GetValue(SelectedItem, property.Name))" 
+                @onchange="(e) => property.SetValue(SelectedItem, (bool)((ChangeEventArgs)e).Value)" />
             break;
         default:
-            <p>@GetValue(Item, Property)</p>
+            <input type="text" value="@GetValue(SelectedItem, property.Name)" @oninput="(e) => property.SetValue(SelectedItem, Convert.ChangeType(e.Value, property.PropertyType))" />
             break;
     }
 }
 
 @code {
-    
     [Parameter]
-    public PropertyInfo Property { get; set; }
+    public object SelectedItem { get; set; }
 
     [Parameter]
-    public object Item { get; set; }
-
-    int? width;
-
-    private object _value;
-
-    private string _valueAsString
-    {
-        get => GetValueAsString();
-        set => SetValueFromString(value);
-    }
-
-    private bool _valueAsBool
-    {
-        get => (bool)_value;
-        set => SetValue(value);
-    }
-
-    private DateOnly _valueAsDateOnly
-    {
-        get => (DateOnly)_value;
-        set => SetValue(value);
-    }
-
-    protected override void OnParametersSet()
-    {
-        _value = Property.GetValue(Item);
-        width = PropertyHelper.GetFieldWidth(Property, Item);
-    }
-
-    private object GetValue(object item, PropertyInfo property)
-    {
-        return property.GetValue(item);
-    }
-
-    private void SetValue(object value)
-    {
-        Property.SetValue(Item, value);
-    }
-
-    private string GetValueAsString()
-    {
-        return _value?.ToString();
-    }
-
-    private void SetValueFromString(string value)
-    {
-        if (Property.PropertyType == typeof(bool))
-        {
-            SetValue(bool.Parse(value));
-        }
-        else if (Property.PropertyType == typeof(DateTime))
-        {
-            SetValue(DateTime.Parse(value));
-        }
-        else
-        {
-            SetValue(value);
-        }
-    }    
+    public PropertyInfo property { get; set; }
 }
