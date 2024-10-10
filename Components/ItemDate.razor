@@ -1,10 +1,13 @@
+@typeparam TItem where TItem : class, new()
 @using Microsoft.AspNetCore.Components
+@using System.Reflection
+@using static ItemHelper
 
 <input type="date" value="@dateValue.ToString("yyyy-MM-dd")" @onchange="HandleChange" />    
 
 @code {
     [Parameter]
-    public object Item { get; set; }
+    public TItem Item { get; set; }
 
     [Parameter]
     public string PropertyName { get; set; }
@@ -13,12 +16,12 @@
 
     protected override void OnParametersSet()
     {
-        dateValue = (DateOnly)Item.GetType().GetProperty(PropertyName).GetValue(Item);
+        dateValue = (DateOnly)typeof(TItem).GetProperty(PropertyName).GetValue(Item);
     }
 
     private void HandleChange(ChangeEventArgs e)
     {
         dateValue = DateOnly.Parse(e.Value.ToString());
-        Item.GetType().GetProperty(PropertyName).SetValue(Item, dateValue);
+        typeof(TItem).GetProperty(PropertyName).SetValue(Item, dateValue);
     }
 }

@@ -1,0 +1,97 @@
+@typeparam TItem where TItem : class, new()
+@using Microsoft.AspNetCore.Components
+@using System.Reflection
+@inject ItemUpdateService UpdateService
+@using static ItemHelper
+
+
+@if (IsReadOnly(Item, property))
+{
+    <p>@GetValue(Item, property.Name)</p>
+}
+else
+{
+    @switch (property.PropertyType.Name)    
+    {
+        case "String":
+            <input type="text" value="@((string)GetValue(Item, property.Name))"
+                @onchange="(e) => property.SetValue(Item, e.Value)" />                
+            break;
+        case "Int32":
+            <input type="number" value="@GetValue(Item, property.Name)" 
+                @onchange="(e) => property.SetValue(Item, Convert.ToInt32(e.Value))"
+                style="@GetFieldWidthStyle(Item, property)" />
+            break;
+        case "DateOnly":
+            <ItemDate Item="Item" PropertyName="@property.Name" />                                    
+            break;
+        case "Boolean":
+            <input type="checkbox" checked="@((bool)GetValue(Item, property.Name))" 
+                @onchange="(e) => property.SetValue(Item, (bool)((ChangeEventArgs)e).Value)" />
+            break;
+        default:
+            @if (property.PropertyType.IsClass)
+            {                                
+                @RenderItemList(property)
+            }
+            else
+            {
+                <input type="text" value="@GetValue(Item, property.Name)" @oninput="(e) => property.SetValue(Item, Convert.ChangeType(e.Value, property.PropertyType))" />
+            }            
+            break;
+    }
+}
+
+@code 
+{
+    [Parameter]
+    public TItem Item { get; set; }
+
+    [Parameter]
+    public PropertyInfo property { get; set; }
+
+    private Type ItemType => property.PropertyType;
+
+    protected override void OnInitialized()
+    {
+        UpdateService.OnPropertyUpdated += NotifyItemListRefresh;
+    }
+
+    private void NotifyItemListRefresh()
+    {
+        //UpdateService.NotifyItemUpdated();      // Didn't work, second dropdown not refreshed 
+    }
+
+    private RenderFragment RenderItemList(PropertyInfo property) => builder =>
+    {
+        var propertyValue = property.GetValue(Item);
+        var type = property.PropertyType;
+        var genericType = typeof(ItemList<>).MakeGenericType(type);
+
+        // Create the delegate for the callback
+        var methodInfo = GetType().GetMethod(nameof(OnItemSelected), BindingFlags.NonPublic | BindingFlags.Instance)
+            ?.MakeGenericMethod(type);
+        var delegateInstance = Delegate.CreateDelegate(typeof(Action<>).MakeGenericType(type), this, methodInfo);
+
+        // Create the EventCallback using the factory
+        var callbackType = typeof(EventCallback<>).MakeGenericType(type);
+        var callback = Activator.CreateInstance(callbackType, new object[] { this, delegateInstance });
+
+        builder.OpenComponent(0, typeof(CascadingValue<>).MakeGenericType(type));
+        builder.AddAttribute(1, "Value", propertyValue); // Pass SelectedItem correctly (initialize if null!)
+        builder.AddAttribute(2, "ChildContent", (RenderFragment)(builder2 =>
+        {
+            builder2.OpenComponent(3, genericType);
+            builder2.AddAttribute(4, "OnItemSelected", callback);
+            builder2.CloseComponent();
+        }));
+        builder.CloseComponent();
+    };        
+    
+    private void OnItemSelected<T>(T item) where T : class
+    {
+        UpdateRelatedItem(Item, item);
+        // Update the property value on the Item object
+        //property.SetValue(Item, Convert.ChangeType(item, property.PropertyType));
+    }
+}

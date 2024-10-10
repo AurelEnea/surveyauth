@@ -1,0 +1,147 @@
+@typeparam TItem where TItem : class, new()
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.EntityFrameworkCore
+@using SurveyAuth.Data
+@using System.ComponentModel.DataAnnotations
+@inject ItemUpdateService UpdateService
+@using static ItemHelper
+
+<h1 class="title-spacing">Add/Edit @(typeName + "s")</h1>
+<div>
+    <p>(Select below to edit or add new @typeName)</p>
+    
+    <CascadingValue Value="SelectedItem">        
+        <ItemList TItem="TItem" OnItemSelected="OnItemSelected" />
+    </CascadingValue>
+</div>
+
+@if (IsNewItem(SelectedItem))    
+{
+    <h4 class="edit-survey">Add new @typeName</h4>
+}
+else        
+{
+    <h4 class="edit-survey">Modify existing @typeName</h4>
+}
+
+<table class="table" aria-label="@typeName table">                                
+    <thead>
+        <tr> 
+            @foreach (var property in SelectedItem.GetType().GetProperties())
+            {   
+                @if (!IsHidden(SelectedItem, property))
+                {             
+                    <th>@property.Name</th>                    
+                }
+            }
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            @foreach (var property in SelectedItem.GetType().GetProperties())
+            {
+                @if (!IsHidden(SelectedItem, property))
+                {
+                    <td>
+                        <ItemProperty TItem="TItem" Item="@SelectedItem" property="@property" />
+                    </td>
+                }
+            }           
+        </tr>
+    </tbody>
+</table>
+
+@if (IsNewItem(SelectedItem))  
+{
+    <button type="submit" class="btn btn-primary" @onclick="@(async () => await AddNewItemAsync())" >Add</button>   
+}
+else    
+{
+    <button class="btn btn-primary" @onclick="UpdateSelectedItemAsync">Update</button>
+    <button class="btn btn-primary" @onclick="DeleteSelectedItemAsync">Delete</button>
+}
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@code {
+    private string typeName = typeof(TItem).Name.Split('.').Last();    
+
+    private string? errorMessage;
+
+    private TItem? SelectedItem { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {                
+        errorMessage = string.Empty;
+        SelectedItem = new TItem().InitializeItem();    
+        StateHasChanged();  // Why is ItemPropery not updated with this?
+    }
+
+    private void OnItemSelected(TItem selectedItem)
+    {        
+        SelectedItem = selectedItem;        
+        StateHasChanged();  // Notifies the state change only if item changed
+    }
+
+    private async Task UpdateSelectedItemAsync()
+    {
+        try
+        {
+            await UpdateItem<TItem>(SelectedItem);
+            UpdateService.NotifyItemUpdated();                  
+            await OnInitializedAsync(); // Initializes SelectedItem and triggers state change, which should propagate to ItemProperty as well
+        }
+        catch (Exception ex)
+        {
+            HandleException (ex);
+        }
+    }
+    
+    private async Task AddNewItemAsync()
+    {
+        try
+        {
+            await AddItem<TItem>(SelectedItem);            
+            UpdateService.NotifyItemUpdated();
+            await OnInitializedAsync();     // Initializes SelectedItem and triggers state change
+        }
+        catch (Exception ex)
+        {
+            HandleException (ex);
+        }
+    }
+
+    private async Task DeleteSelectedItemAsync()
+    {
+        try
+        {
+            await DeleteItem<TItem>(SelectedItem);
+            UpdateService.NotifyItemUpdated();  
+            await OnInitializedAsync(); // Initializes SelectedItem and triggers state change
+        }
+        catch (Exception ex)
+        {
+            HandleException (ex);
+        }
+    }    
+
+    private void HandleException(Exception ex)
+    {
+        if (ex is DbUpdateException dbUpdateEx)
+        {
+            errorMessage = $"Database update failed. Please try again. Specifically: {dbUpdateEx.InnerException?.Message} \n{dbUpdateEx} ";
+        }
+        else if (ex is ValidationException validationEx)
+        {
+            errorMessage = validationEx.Message + validationEx.InnerException?.Message;
+        }
+        else
+        {
+            errorMessage = "An unexpected error occurred. Please try again." + ex.Message + ex.InnerException?.Message;
+        }        
+    }
+}
+

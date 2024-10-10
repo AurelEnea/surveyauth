@@ -1,103 +1,68 @@
 @typeparam TItem where TItem : class, new()
-@using SurveyAuth.Data
-@using static PropertyHelper
+@using Microsoft.AspNetCore.Components
+@using System.Reflection
+@inject ItemUpdateService UpdateService
+@using static ItemHelper
 
-<h1 class="title-spacing">Add/Edit @(typeName + "s")</h1>
-<div>
-    <p>(Select below to edit or add new @typeName)</p>
+<select @onchange="OnSelectItem" aria-label="Select @typeName">
+    @foreach (var item in Items)
+    {
+        <option value="@GetId(item)" selected="@(IsSelected(item))">
+            @GetDropDownDisplay(item)
+        </option>
+    }
+</select>
+
+@code 
+{   
+    [Parameter]
+    public EventCallback<TItem> OnItemSelected { get; set; }
     
-    <select @onchange="SelectItem" aria-label="Select @typeName">
-        @foreach (var item in Items)
-        {
-            <option value="@GetId(item)">
-                @GetDropDownDisplay(item)
-            </option>
-        }
-    </select>  
-</div>
+    private string typeName { get; set; }  
 
-@if (IsNewItem(SelectedItem))    
-{
-    <h4 class="edit-survey">Add new @typeName</h4>
-}
-else        
-{
-    <h4 class="edit-survey">Modify existing @typeName</h4>
-}
-
-<table class="table" aria-label="@typeName table">                                
-    <thead>
-        <tr> 
-            @foreach (var property in typeof(TItem).GetProperties())
-            {   
-                @if (!IsHidden(property, SelectedItem))
-                {             
-                    <th>@property.Name</th>                    
-                }
-            }
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            @foreach (var property in typeof(TItem).GetProperties())
-            {
-                @if (!IsHidden(property, SelectedItem))
-                {
-                    <td>
-                        <PropertyDisplay SelectedItem="@SelectedItem" property="@property" />
-                    </td>
-                }
-            }           
-        </tr>
-    </tbody>
-</table>
-
-@if (IsNewItem(SelectedItem))  
-{
-    <button type="submit" class="btn btn-primary" @onclick="@(async () => await AddItem(SelectedItem))" disabled="@SelectedItem == null">Add</button>   
-}
-else    
-{
-    <button class="btn btn-primary" @onclick="UpdateSelectedItemAsync">Update</button>
-    <button class="btn btn-primary" @onclick="DeleteSelectedItemAsync">Delete</button>
-}
-
-@code {
-    private string typeName = typeof(TItem).Name.Split('.').Last();    
     private List<TItem> Items { get; set; }
-    private TItem SelectedItem { get; set; }
+
+    [CascadingParameter]
+    public TItem SelectedItem { get; set; } 
+
+
+    protected override async Task OnParametersSetAsync()
+    {        
+    }
 
     protected override async Task OnInitializedAsync()
-    {        
-        Items = await GetItems<TItem>();
-        SelectedItem = new TItem();
-        SelectedItem = (TItem)InitializeItem(SelectedItem);
-        Items.Insert(0, SelectedItem); // Add "New Item" option
-    }
-
-    private async void SelectItem(ChangeEventArgs e)
-    {        
-        int itemId = int.Parse(e.Value.ToString());
-        var selectedItem = await GetItemById<TItem>(itemId);
-        SelectedItem = selectedItem ?? new TItem();
-    }
-
-    private async Task UpdateSelectedItemAsync()
     {
-        await UpdateItem(SelectedItem);
-        await OnInitializedAsync();
+        UpdateService.OnItemUpdated += async () => await Refresh();     // Call refresh from ItemEdit
+        if (Items == null || !Items.Any() || SelectedItem == null)      // Call refresh on initialization   
+        {
+            await Refresh();
+        }
     }
 
-    private async Task DeleteSelectedItemAsync()
+    public async Task Refresh()
     {
-        await DeleteItem(SelectedItem);
-        await OnInitializedAsync();
+        typeName = typeof(TItem).Name;
+        Items = await new TItem().GetItemsAsync();            
+        SelectedItem = new TItem().InitializeItem(); 
+        Items.Insert(0, SelectedItem);
+        //OnItemSelected.InvokeAsync(SelectedItem);     // Wrongly updates previously selected Question with 'New Survey'  
+        // StateHasChanged();   // Consider adding this, though it works without it too
+    
     }
 
-    private async Task AddNewItemAsync()
+    private void OnSelectItem(ChangeEventArgs e)
     {
-        await AddItem(SelectedItem);
-        await OnInitializedAsync();
+        if (int.TryParse(e.Value.ToString(), out int itemId))
+        {
+            var idProperty = typeof(TItem).GetProperty("Id");
+            SelectedItem = Items.FirstOrDefault(i => idProperty != null && (int)idProperty.GetValue(i) == itemId);
+        }
+        OnItemSelected.InvokeAsync(SelectedItem);        
+    }
+
+    private bool IsSelected(TItem item)
+    {
+        var idProperty = typeof(TItem).GetProperty("Id");
+        return idProperty != null && SelectedItem != null && idProperty.GetValue(item).Equals(idProperty.GetValue(SelectedItem));
     }
 }
-

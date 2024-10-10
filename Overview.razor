@@ -1,0 +1,115 @@
+@page "/overview"
+@using Microsoft.AspNetCore.Components.Web
+
+<PageTitle> Survey - overview</PageTitle>
+
+<h1>Survey Application Overview</h1>
+<br />
+<h4>Application Workflow</h4>
+
+<ol>
+    <li>Users are directed to the login page.</li>
+    <li>After successful login, the home page displays a drop-down list of surveys.</li>
+    <li>Selecting a survey activates the button to answer questions.</li>
+</ol>
+
+<h4>Key Features</h4>
+
+<ul>
+    <li>Dynamic display of items using <code>ItemEdit.razor</code></li>
+    <li>Component-based architecture:
+        <ul>
+            <li><code>ItemProperty</code> for field display</li>
+            <li><code>ItemDate</code> for date formatting</li>
+        </ul>
+    </li>
+    <li>Data manipulation handled by <code>ItemHelper.cs</code></li>
+</ul>
+
+<h4>Technical Details</h4>
+
+<p>Built using [Blazor, C#, and SQLite]</p>
+<p><a href="https://github.com/AurelEnea/surveyauth" target="_blank">Github SurveyAuth repository</a></p>
+
+<h1>Survey App Architecture</h1>
+
+<h4>Overview</h4>
+<p>This document outlines the architecture of the Survey App.</p>
+
+<h4>Main Components</h4>
+<ol>
+    <li><code>Surveys</code></li>
+    <li><code>Questions</code></li>
+    <li><code>Answers</code></li>
+</ol>
+
+<h4>Corresponding Model Classes</h4>
+<ol>
+    <li><code>Survey</code></li>
+    <li><code>Question</code></li>
+    <li><code>Answer</code></li>
+</ol>
+
+<h4>Key Components and Their Roles</h4>
+<h5>ItemEdit (generic, type <code>TItem</code>)</h5>
+<ul>
+    <li>Displays dropdown list of items (loaded from DB via <code>ItemList</code>)</li>
+    <li>Handles selection and refresh using cascading parameter (<code>SelectedItem</code>) and event callback (<code>SelectItem()</code>)</li>
+    <li>Displays fields of selected item using <code>ItemProperty</code></li>
+    <li>Calls <code>ItemHelper</code> for data manipulation (add, edit, delete)</li>
+</ul>
+
+<h5>ItemList</h5>
+<ul>
+    <li>Loads items from DB for display as a dropdown list</li>
+    <li>Used for main components (Surveys, Questions, Answers) and for fields of type list</li>
+</ul>
+
+<h5>ItemProperty</h5>
+<ul>
+    <li>Displays individual properties based on type (int, string, bool, date, class)</li>
+    <li>Calls <code>ItemDate</code> for date types and <code>ItemList</code> for class types</li>
+    <li>Uses <code>ItemHelper</code> for DB/config interactions (identify, verify, get, set values)</li>
+    <li>Uses RenderFragment method to call <code>ItemList</code> (passing <code>SelectedItem</code> and <code>SelectItem()</code>)</li>
+</ul>
+
+<h5>ItemDate</h5>
+<ul>
+    <li>Handles date element: display and modification when item field is of type <code>DateOnly</code></li>
+</ul>
+
+<h5>ItemHelper</h5>
+<ul>
+    <li>Handles DB/config interactions for <code>ItemEdit</code> and <code>ItemProperty</code> (add, edit, delete, identify, verify, get, set values)</li>
+</ul>
+<hr style="border-top: 1px solid #ccc; margin-top: 20px; margin-bottom: 20px;">
+<h1>Key Architecture Principles</h1>
+
+
+<h2>Core Principles</h2>
+
+
+<h3>Modular</h3>
+<p>Separation of concerns through component-based development, ensuring maintainability and scalability.</p>
+<ul>
+    <li>Easier maintenance, updates, and reuse of components</li>
+    <li>Reduced complexity</li>
+</ul>
+
+
+<h3>Universal</h3>
+<p>Type-agnostic design enabling versatile and adaptable interactions, with loose coupling between components.</p>
+<ul>
+    <li>Increased flexibility</li>
+    <li>Reduced code duplication</li>
+    <li>Simplified integration with diverse systems</li>
+</ul>
+
+
+<h3>Dynamic</h3>
+<p>Zero-code customization allowing users to modify application look and behavior, with automated testing for reliability.</p>
+<ul>
+    <li>Enhanced user experience</li>
+    <li>Reduced development time</li>
+    <li>Increased adaptability to changing requirements</li>
+</ul>
